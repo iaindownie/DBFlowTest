@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DBFlow Test</string>
+    <string name="welcome">Hello World!</string>
+</resources>
