@@ -15,8 +15,8 @@ public class DBInitialisation extends Application {
         super.onCreate();
         FlowManager.init(new FlowConfig.Builder(this).build());
 
+/*
 
-        /*
         // Create loc
         Loc aLoc = new Loc(1, "LOC100", "Iain");
         aLoc.save();
@@ -35,6 +35,8 @@ public class DBInitialisation extends Application {
         aSub = new Sub(4, "SUB204", "LOC102");
         aSub.save();
 
+
+
         // Create obs
         Obs anObs = new Obs(1, "OBS300", "SUB200");
         anObs.save();
@@ -44,6 +46,8 @@ public class DBInitialisation extends Application {
         anObs.save();
         anObs = new Obs(4, "OBS303", "SUB203");
         anObs.save();
+
+
          */
 
     }

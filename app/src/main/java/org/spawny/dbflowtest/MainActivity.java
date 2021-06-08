@@ -17,6 +17,7 @@ import com.github.jasminb.jsonapi.JSONAPIDocument;
 import com.github.jasminb.jsonapi.ResourceConverter;
 import com.raizlabs.android.dbflow.config.FlowManager;
 import com.raizlabs.android.dbflow.sql.language.Delete;
+import com.raizlabs.android.dbflow.sql.language.SQLite;
 import com.raizlabs.android.dbflow.sql.language.Select;
 import com.raizlabs.android.dbflow.structure.database.DatabaseWrapper;
 
@@ -34,6 +35,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import static com.raizlabs.android.dbflow.sql.language.Method.count;
 
 
 public class MainActivity extends Activity {
@@ -140,7 +143,7 @@ public class MainActivity extends Activity {
         List<Obs> aList = new Select().from(Obs.class).queryList();
 
         for (Obs o : aList) {
-            Log.i("INFO", "**** Species Obs: " + o.species);
+            //Log.i("INFO", "**** Species Obs: " + o.species);
         }
 
         List<Sub> bList = new Select()
@@ -153,6 +156,11 @@ public class MainActivity extends Activity {
         for (Sub sub : bList) {
             Log.i("INFO", "**** Refined Subs: " + sub.subId);
         }
+
+        long locCount = SQLite.select(count(Loc_Table.locId))
+                .from(Loc.class).count();
+
+        Log.d("INFO", "**** Loc count: " + locCount);
 
         //new DownloadBreedingCodesTask().execute();
         //System.out.println("*****ISD:" + rawResponse.toString());
@@ -219,8 +227,6 @@ public class MainActivity extends Activity {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -314,8 +320,6 @@ public class MainActivity extends Activity {
             }
 
         } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
             e.printStackTrace();
         }
         return str;

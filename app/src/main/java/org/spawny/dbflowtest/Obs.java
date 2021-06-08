@@ -25,8 +25,16 @@ public class Obs extends BaseModel {
     @Column
     String species;
 
+    public void setSpecies(String species) {
+        this.species = species;
+    }
+
     @Column
-    public String dummy;
+    String dummy;
+
+    public void setDummy(String dummy) {
+        this.dummy = dummy;
+    }
 
     public Obs() {
     }
@@ -49,7 +57,5 @@ public class Obs extends BaseModel {
         this.obsId = obsId;
     }
 
-    public void setSpecies(String species) {
-        this.species = species;
-    }
+
 }
