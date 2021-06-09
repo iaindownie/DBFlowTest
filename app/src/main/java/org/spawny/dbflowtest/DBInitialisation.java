@@ -14,8 +14,9 @@ public class DBInitialisation extends Application {
     public void onCreate() {
         super.onCreate();
         FlowManager.init(new FlowConfig.Builder(this).build());
+        MyDatabase.initializeDatabase();
 
-/*
+
 
         // Create loc
         Loc aLoc = new Loc(1, "LOC100", "Iain");
@@ -24,7 +25,7 @@ public class DBInitialisation extends Application {
         aLoc.save();
         aLoc = new Loc(3, "LOC102", "Dave");
         aLoc.save();
-
+/*
         // Create sub
         Sub aSub = new Sub(1, "SUB200", "LOC100");
         aSub.save();

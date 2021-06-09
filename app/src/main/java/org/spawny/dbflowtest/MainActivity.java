@@ -149,15 +149,15 @@ public class MainActivity extends Activity {
         List<Sub> bList = new Select()
                 .from(Sub.class)
                 .leftOuterJoin(Loc.class)
-                .on(Sub_Table.locId.withTable().eq(Loc_Table.locId.withTable()))
-                .where(Loc_Table.userId.withTable().eq("Dave"))
+                .on(Sub$Table.locId.withTable().eq(Loc$Table.locId.withTable()))
+                .where(Loc$Table.userId.withTable().eq("Dave"))
                 .queryList();
 
         for (Sub sub : bList) {
             Log.i("INFO", "**** Refined Subs: " + sub.subId);
         }
 
-        long locCount = SQLite.select(count(Loc_Table.locId))
+        long locCount = SQLite.select(count(Loc$Table.locId))
                 .from(Loc.class).count();
 
         Log.d("INFO", "**** Loc count: " + locCount);
@@ -248,7 +248,7 @@ public class MainActivity extends Activity {
         // can use UI thread here
         protected void onPreExecute() {
             Log.d("INFO", "*****ISD2: Calling DownloadBreedingCodesTask");
-            Delete.table(BreedingCode.class, BreedingCode_Table.code.isNull());
+            Delete.table(BreedingCode.class, BreedingCode$Table.code.isNull());
         }
 
         // automatically done on worker thread (separate from UI thread)
