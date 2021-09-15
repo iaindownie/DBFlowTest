@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -15,11 +17,20 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jasminb.jsonapi.JSONAPIDocument;
 import com.github.jasminb.jsonapi.ResourceConverter;
+import com.raizlabs.android.dbflow.config.DatabaseDefinition;
 import com.raizlabs.android.dbflow.config.FlowManager;
+import com.raizlabs.android.dbflow.sql.language.Condition;
+import com.raizlabs.android.dbflow.sql.language.ConditionGroup;
+import com.raizlabs.android.dbflow.sql.language.CursorResult;
 import com.raizlabs.android.dbflow.sql.language.Delete;
+import com.raizlabs.android.dbflow.sql.language.NameAlias;
 import com.raizlabs.android.dbflow.sql.language.SQLite;
 import com.raizlabs.android.dbflow.sql.language.Select;
+import com.raizlabs.android.dbflow.sql.language.property.PropertyFactory;
 import com.raizlabs.android.dbflow.structure.database.DatabaseWrapper;
+import com.raizlabs.android.dbflow.structure.database.transaction.ITransaction;
+import com.raizlabs.android.dbflow.structure.database.transaction.QueryTransaction;
+import com.raizlabs.android.dbflow.structure.database.transaction.Transaction;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -36,7 +47,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import androidx.annotation.NonNull;
+
+import static com.raizlabs.android.dbflow.sql.language.Method.avg;
 import static com.raizlabs.android.dbflow.sql.language.Method.count;
+import static com.raizlabs.android.dbflow.sql.language.Method.max;
+import static com.raizlabs.android.dbflow.sql.language.Method.sum;
 
 
 public class MainActivity extends Activity {
@@ -49,26 +65,48 @@ public class MainActivity extends Activity {
     SharedPreferences prefs;
 
     private static MainActivity ins;
+    private List<Loc> locs2 = new ArrayList<>();
+
+    private DatabaseWrapper db;
+    private DatabaseDefinition dbDef;
 
 
     public static MainActivity getInstance() {
         return ins;
     }
 
-    public void doTask(final String t) {
-        runOnUiThread(new Runnable() {
-            public void run() {
-                Toast.makeText(ins, t + ": " + java.util.Locale.getDefault().getLanguage(), Toast.LENGTH_SHORT).show();
-                new DownloadBreedingCodesTask().execute();
-                Log.d("INFO", "**** End of doTask");
-            }
-        });
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        db = MyDatabase.getDatabase();
+        dbDef = MyDatabase.getDbDefinition();
+
+        Button add3 = findViewById(R.id.add_3_button);
+        Button add5 = findViewById(R.id.add_5_button);
+        Button logRecords = findViewById(R.id.log_content_button);
+
+        add3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addRecordsToDB(3);
+            }
+        });
+        add5.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addRecordsToDB(5);
+            }
+        });
+        logRecords.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                logRecords();
+            }
+        });
+
         Log.d("INFO", "**** onCreate");
         ins = this;
 
@@ -122,11 +160,6 @@ public class MainActivity extends Activity {
             }
         }*/
 
-        List<Loc> locs = new Select().from(Loc.class).queryList();
-        //Log.i("INFO", "**** nLocs: " + locs.size());
-        for (Loc loc : locs) {
-            Log.i("INFO", "**** Loc: " + loc.locId);
-        }
 
         List<Sub> subs = new Select().from(Sub.class).queryList();
         //Log.i("INFO", "**** nSubs: " + subs.size());
@@ -193,6 +226,83 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+    }
+
+    private void addRecordsToDB(int recordCount) {
+        for (int i = 0; i < recordCount; i++) {
+            insertSomeNewRecords();
+        }
+    }
+
+    private void insertSomeNewRecords() {
+        int random = (int) (Math.random() * 100000);
+        Loc bLoc = new Loc();
+        bLoc.locId = "LOC00" + random;
+        bLoc.userId = "USR" + random;
+        bLoc.save();
+    }
+
+    private void logRecords() {
+        List<Loc> locs = new Select().from(Loc.class).queryList();
+
+        dbDef.beginTransactionAsync(new QueryTransaction.Builder<>(
+                SQLite.select().from(Loc.class))
+                .queryResult(new QueryTransaction.QueryResultCallback<Loc>() {
+                    @Override
+                    public void onQueryResult(QueryTransaction transaction, @NonNull CursorResult<Loc> result) {
+                        locs2 = result.toListClose();
+                        for (Loc loc : locs2) {
+                            Log.i("INFO", "##### Loc: " + loc.locId + ": " + loc.userId + " " + loc.createdAt.getTime() + " " + loc.updatedAt.getTime());
+                        }
+                    }
+                }).build()).build().execute();
+
+
+        for (Loc loc : locs) {
+            Log.i("INFO", "**** Loc: " + loc.locId + ": " + loc.userId + " " + loc.createdAt.getTime() + " " + loc.updatedAt.getTime());
+        }
+
+        Loc singleLoc = new Select()
+                .from(Loc.class)
+                .where(Loc$Table.userId.eq("USR38851")).querySingle();
+
+        Log.i("INFO", "****** Loc: " + singleLoc.locId + ": " + singleLoc.userId + " " + singleLoc.createdAt.getTime() + " " + singleLoc.updatedAt.getTime());
+
+
+
+
+
+        dbDef.beginTransactionAsync(new ITransaction() {
+            @Override
+            public void execute(DatabaseWrapper databaseWrapper) {
+                // do anything you want here.
+                List<Loc> items =
+                        SQLite.select()
+                                .from(Loc.class)
+                                .where(ConditionGroup.clause()
+                                        .and(Loc$Table._ID.greaterThan(2l))
+                                        .or(Loc$Table._ID.greaterThan(10l)))
+                                .queryList();
+                for (Loc loc : items) {
+                    Log.i("INFO", "**** Loc ITEM: " + loc._ID + ": " + loc.locId + ": " + loc.userId + " " + loc.createdAt.getTime() + " " + loc.updatedAt.getTime());
+                }
+
+            }
+        })
+                .error(new Transaction.Error() {
+                    @Override
+                    public void onError(Transaction transaction, Throwable error) {
+                        Log.i("INFO", error.getMessage());
+                    }
+                })
+                .success(new Transaction.Success() {
+                    @Override
+                    public void onSuccess(Transaction transaction) {
+                        Log.i("INFO", "onSuccess");
+                    }
+                }).build().execute();
 
 
     }
@@ -374,6 +484,16 @@ public class MainActivity extends Activity {
 
         return user;
 
+    }
+
+    public void doTask(final String t) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                Toast.makeText(ins, t + ": " + java.util.Locale.getDefault().getLanguage(), Toast.LENGTH_SHORT).show();
+                new DownloadBreedingCodesTask().execute();
+                Log.d("INFO", "**** End of doTask");
+            }
+        });
     }
 
 

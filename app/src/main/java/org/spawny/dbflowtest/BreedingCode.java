@@ -12,11 +12,7 @@ import com.raizlabs.android.dbflow.structure.BaseModel;
  * Class to hold BreedingCode and BreedingText
  */
 @Table(database = MyDatabase.class)
-public class BreedingCode extends BaseModel {
-
-    @Column
-    @PrimaryKey
-    String id;
+public class BreedingCode extends EBirdModel {
 
     @Column
     @Unique

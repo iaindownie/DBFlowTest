@@ -2,21 +2,22 @@ package org.spawny.dbflowtest;
 
 
 import com.raizlabs.android.dbflow.annotation.Column;
-import com.raizlabs.android.dbflow.annotation.PrimaryKey;
+import com.raizlabs.android.dbflow.annotation.Index;
+import com.raizlabs.android.dbflow.annotation.IndexGroup;
 import com.raizlabs.android.dbflow.annotation.Table;
-import com.raizlabs.android.dbflow.structure.BaseModel;
+import com.raizlabs.android.dbflow.annotation.Unique;
 
 /**
  * Created by iaindownie on 23/06/2016.
  */
 
-@Table(database = MyDatabase.class)
-public class Loc extends BaseModel {
+@Table(database = MyDatabase.class,
+        indexGroups = {
+                @IndexGroup(number = 1, unique = true, name = "LocLocIdIndex")
+        })
+public class Loc extends ArchivableModel {
 
-    @Column
-    @PrimaryKey
-    int id;
-
+    @Index(indexGroups = 1)
     @Column
     String locId;
 
@@ -27,13 +28,8 @@ public class Loc extends BaseModel {
     }
 
     public Loc(int id, String locId, String userId) {
-        this.id = id;
         this.locId = locId;
         this.userId = userId;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public void setLocId(String locId) {
