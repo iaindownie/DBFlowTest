@@ -28,5 +28,14 @@
         android:layout_below="@+id/add_5_button"
         android:layout_centerHorizontal="true"/>
 
+    <Button
+        android:id="@+id/clear_tables_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clear all tables"
+        android:layout_marginTop="20dp"
+        android:layout_below="@+id/log_content_button"
+        android:layout_centerHorizontal="true"/>
+
 
 </RelativeLayout>

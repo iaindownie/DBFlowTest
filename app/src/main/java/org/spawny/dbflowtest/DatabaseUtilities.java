@@ -1,10 +1,12 @@
 package org.spawny.dbflowtest;
 
 import android.database.Cursor;
+import android.util.Log;
 
-import com.raizlabs.android.dbflow.structure.BaseModel;
+import com.raizlabs.android.dbflow.sql.language.property.Property;
 import com.raizlabs.android.dbflow.structure.database.DatabaseWrapper;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -129,7 +131,56 @@ public class DatabaseUtilities {
         return beforeUpdateTimestamp;
     }
 
-    public static void createIndices(DatabaseWrapper db){
+    public static void createIndices(DatabaseWrapper db) {
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS LocLocIdIndex ON Loc (locId)");
+    }
+
+    public static List<String> columnsForModelClass(Class c, boolean includeEBirdModelColumns) {
+        Class tableClass = getTableClass(c);
+        Log.d("INFO", "++++++++ " + tableClass.getSimpleName());
+        Field[] fields = tableClass.getFields();
+        ArrayList<String> columnList = new ArrayList<>();
+        for (Field field : fields) {
+            //Log.d("INFO", "++++++++ " + field.getName());
+            if (field.getType() == Property.class) {
+                //String fieldValue = (String) field.get(tableClass);
+                //String fieldValue = (String) field.get(tableClass);
+                switch (field.getName()) {
+                    case "TABLE_NAME":
+                        // Skip table name
+                        break;
+                    case "_ID":
+                    case "archived":
+                    case "createdAt":
+                    case "updatedAt":
+                        if (includeEBirdModelColumns) {
+                            columnList.add(field.getName());
+                        }
+                        break;
+                    default:
+                        columnList.add(field.getName());
+                        break;
+                }
+            }
+        }
+        return columnList;
+    }
+
+    /**
+     * Get the table class for a given model class.
+     *
+     * @param c Model class.
+     * @return Table class for the model, null if not found.
+     */
+    public static Class getTableClass(Class c) {
+        String className = c.getName();
+        String tableClassName = className + "$Table";
+        Class tableClass = null;
+        try {
+            tableClass = Class.forName(tableClassName);
+        } catch (ClassNotFoundException e) {
+            // Do nothing, null will be returned
+        }
+        return tableClass;
     }
 }

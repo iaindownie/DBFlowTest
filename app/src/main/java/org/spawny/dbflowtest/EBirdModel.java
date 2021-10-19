@@ -12,6 +12,7 @@ import java.util.Date;
  */
 
 public abstract class EBirdModel extends BaseModel {
+
     @JsonIgnore
     @Column
     @PrimaryKey(autoincrement = true)

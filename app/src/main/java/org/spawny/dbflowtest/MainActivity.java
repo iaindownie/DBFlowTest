@@ -1,8 +1,10 @@
 package org.spawny.dbflowtest;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -19,18 +21,13 @@ import com.github.jasminb.jsonapi.JSONAPIDocument;
 import com.github.jasminb.jsonapi.ResourceConverter;
 import com.raizlabs.android.dbflow.config.DatabaseDefinition;
 import com.raizlabs.android.dbflow.config.FlowManager;
-import com.raizlabs.android.dbflow.sql.language.Condition;
-import com.raizlabs.android.dbflow.sql.language.ConditionGroup;
 import com.raizlabs.android.dbflow.sql.language.CursorResult;
 import com.raizlabs.android.dbflow.sql.language.Delete;
-import com.raizlabs.android.dbflow.sql.language.NameAlias;
 import com.raizlabs.android.dbflow.sql.language.SQLite;
 import com.raizlabs.android.dbflow.sql.language.Select;
-import com.raizlabs.android.dbflow.sql.language.property.PropertyFactory;
+import com.raizlabs.android.dbflow.sql.language.property.IProperty;
 import com.raizlabs.android.dbflow.structure.database.DatabaseWrapper;
-import com.raizlabs.android.dbflow.structure.database.transaction.ITransaction;
 import com.raizlabs.android.dbflow.structure.database.transaction.QueryTransaction;
-import com.raizlabs.android.dbflow.structure.database.transaction.Transaction;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -49,10 +46,7 @@ import java.util.Map;
 
 import androidx.annotation.NonNull;
 
-import static com.raizlabs.android.dbflow.sql.language.Method.avg;
 import static com.raizlabs.android.dbflow.sql.language.Method.count;
-import static com.raizlabs.android.dbflow.sql.language.Method.max;
-import static com.raizlabs.android.dbflow.sql.language.Method.sum;
 
 
 public class MainActivity extends Activity {
@@ -66,6 +60,7 @@ public class MainActivity extends Activity {
 
     private static MainActivity ins;
     private List<Loc> locs2 = new ArrayList<>();
+    private List<Sub> subs = new ArrayList<>();
 
     private DatabaseWrapper db;
     private DatabaseDefinition dbDef;
@@ -87,6 +82,7 @@ public class MainActivity extends Activity {
         Button add3 = findViewById(R.id.add_3_button);
         Button add5 = findViewById(R.id.add_5_button);
         Button logRecords = findViewById(R.id.log_content_button);
+        Button clearTables = findViewById(R.id.clear_tables_button);
 
         add3.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -104,6 +100,12 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 logRecords();
+            }
+        });
+        clearTables.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearTables();
             }
         });
 
@@ -179,18 +181,20 @@ public class MainActivity extends Activity {
             //Log.i("INFO", "**** Species Obs: " + o.species);
         }
 
-        List<Sub> bList = new Select()
-                .from(Sub.class)
-                .leftOuterJoin(Loc.class)
-                .on(Sub$Table.locId.withTable().eq(Loc$Table.locId.withTable()))
-                .where(Loc$Table.userId.withTable().eq("Dave"))
-                .queryList();
+        List<Sub> bList = new ArrayList<>();
+//        bList = new Select()
+//                .from(Sub.class)
+//                .leftOuterJoin(Loc.class)
+//                .on(Sub$Table.locId__ID.withTable().eq(Loc$Table.locId.withTable()))
+//                .where(Loc$Table.userId.withTable().eq("Dave"))
+//                .queryList();
 
         for (Sub sub : bList) {
             Log.i("INFO", "**** Refined Subs: " + sub.subId);
         }
 
-        long locCount = SQLite.select(count(Loc$Table.locId))
+        long locCount = 0;
+        locCount = SQLite.select(count(Loc$Table.locId))
                 .from(Loc.class).count();
 
         Log.d("INFO", "**** Loc count: " + locCount);
@@ -238,72 +242,129 @@ public class MainActivity extends Activity {
 
     private void insertSomeNewRecords() {
         int random = (int) (Math.random() * 100000);
-        Loc bLoc = new Loc();
-        bLoc.locId = "LOC00" + random;
-        bLoc.userId = "USR" + random;
-        bLoc.save();
+        Log.d("INFO", "LOC00" + random);
+//        Loc bLoc = new Loc();
+//        bLoc.locId = "LOC00" + random;
+//        bLoc.userId = "USR" + random;
+//        bLoc.save();
+//
+//        Sub s = new Sub();
+//        s.subId = "SUB" + random;
+//        s.locId = bLoc.locId;
+//        s.save();
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(Loc$Table.locId.toString(), "LOC00" + random);
+        contentValues.put(Loc$Table.userId.toString(), "USR" + random);
+        MyDatabase
+                .getDatabase()
+                .insertWithOnConflict("Loc", null, contentValues, SQLiteDatabase.CONFLICT_ROLLBACK);
+
+
+    }
+
+    private void clearTables(){
+        Delete.table(Loc.class);
+        Delete.table(Sub.class);
+        Delete.table(Obs.class);
     }
 
     private void logRecords() {
-        List<Loc> locs = new Select().from(Loc.class).queryList();
+
+//        String columnName = Loc$Table.userId.toString().replace("`","");
+//        //Log.d("INFO", columnName);
+//        IProperty<Property>[] pp = Loc$Table.getAllColumnProperties();
+//        //Log.d("INFO", pp.toString());
+//        for(IProperty p: pp){
+//            Log.d("INFO", p.getTable().getSimpleName());
+//            Log.d("INFO", p.getContainerKey());
+//            Log.d("INFO", p.getCursorKey());
+//            //Log.d("INFO", p.getNameAlias().);
+//        }
+
+        for (String col : DatabaseUtilities.columnsForModelClass(Loc.class, false)) {
+            Log.d("INFO", "++++++++ " + col);
+        }
+
+
+        //List<Loc> locs = new Select().from(Loc.class).queryList();
 
         dbDef.beginTransactionAsync(new QueryTransaction.Builder<>(
                 SQLite.select().from(Loc.class))
                 .queryResult(new QueryTransaction.QueryResultCallback<Loc>() {
+
+
                     @Override
-                    public void onQueryResult(QueryTransaction transaction, @NonNull CursorResult<Loc> result) {
-                        locs2 = result.toListClose();
+                    public void onQueryResult(@NonNull QueryTransaction<Loc> transaction, @NonNull CursorResult<Loc> tResult) {
+                        locs2 = tResult.toListClose();
                         for (Loc loc : locs2) {
                             Log.i("INFO", "##### Loc: " + loc.locId + ": " + loc.userId + " " + loc.createdAt.getTime() + " " + loc.updatedAt.getTime());
                         }
                     }
+
+
                 }).build()).build().execute();
 
 
-        for (Loc loc : locs) {
-            Log.i("INFO", "**** Loc: " + loc.locId + ": " + loc.userId + " " + loc.createdAt.getTime() + " " + loc.updatedAt.getTime());
-        }
+//        for (Loc loc : locs) {
+//            Log.i("INFO", "**** Loc: " + loc.locId + ": " + loc.userId + " " + loc.createdAt.getTime() + " " + loc.updatedAt.getTime());
+//        }
 
-        Loc singleLoc = new Select()
-                .from(Loc.class)
-                .where(Loc$Table.userId.eq("USR38851")).querySingle();
+//        Loc singleLoc = new Select()
+//                .from(Loc.class)
+//                .where(Loc$Table.userId.eq("USR38851")).querySingle();
 
-        Log.i("INFO", "****** Loc: " + singleLoc.locId + ": " + singleLoc.userId + " " + singleLoc.createdAt.getTime() + " " + singleLoc.updatedAt.getTime());
-
-
+        //Log.i("INFO", "****** Loc: " + singleLoc.locId + ": " + singleLoc.userId + " " + singleLoc.createdAt.getTime() + " " + singleLoc.updatedAt.getTime());
 
 
+//        dbDef.beginTransactionAsync(new ITransaction() {
+//            @Override
+//            public void execute(DatabaseWrapper databaseWrapper) {
+//                // do anything you want here.
+//                List<Loc> items =
+//                        SQLite.select()
+//                                .from(Loc.class)
+//                                .where(ConditionGroup.clause()
+//                                        .and(Loc$Table._ID.greaterThan(2l))
+//                                        .or(Loc$Table._ID.greaterThan(10l)))
+//                                .queryList();
+//                for (Loc loc : items) {
+//                    Log.i("INFO", "**** Loc ITEM: " + loc._ID + ": " + loc.locId + ": " + loc.userId + " " + loc.createdAt.getTime() + " " + loc.updatedAt.getTime());
+//                }
+//
+//            }
+//        })
+//                .error(new Transaction.Error() {
+//                    @Override
+//                    public void onError(Transaction transaction, Throwable error) {
+//                        Log.i("INFO", error.getMessage());
+//                    }
+//                })
+//                .success(new Transaction.Success() {
+//                    @Override
+//                    public void onSuccess(Transaction transaction) {
+//                        Log.i("INFO", "onSuccess");
+//                    }
+//                }).build().execute();
 
-        dbDef.beginTransactionAsync(new ITransaction() {
-            @Override
-            public void execute(DatabaseWrapper databaseWrapper) {
-                // do anything you want here.
-                List<Loc> items =
-                        SQLite.select()
-                                .from(Loc.class)
-                                .where(ConditionGroup.clause()
-                                        .and(Loc$Table._ID.greaterThan(2l))
-                                        .or(Loc$Table._ID.greaterThan(10l)))
-                                .queryList();
-                for (Loc loc : items) {
-                    Log.i("INFO", "**** Loc ITEM: " + loc._ID + ": " + loc.locId + ": " + loc.userId + " " + loc.createdAt.getTime() + " " + loc.updatedAt.getTime());
-                }
+        Log.d("INFO", "" + Loc.class.getSimpleName());
 
-            }
-        })
-                .error(new Transaction.Error() {
+
+        dbDef.beginTransactionAsync(new QueryTransaction.Builder<>(
+                SQLite.select().from(Sub.class))
+                .queryResult(new QueryTransaction.QueryResultCallback<Sub>() {
+
+
                     @Override
-                    public void onError(Transaction transaction, Throwable error) {
-                        Log.i("INFO", error.getMessage());
+                    public void onQueryResult(@NonNull QueryTransaction<Sub> transaction, @NonNull CursorResult<Sub> tResult) {
+                        subs = tResult.toListClose();
+                        for (Sub s : subs) {
+                            Log.i("INFO", "##### Sub: " + s.locId + ": " + s.createdAt.getTime() + " " + s.updatedAt.getTime());
+                        }
                     }
-                })
-                .success(new Transaction.Success() {
-                    @Override
-                    public void onSuccess(Transaction transaction) {
-                        Log.i("INFO", "onSuccess");
-                    }
-                }).build().execute();
 
+
+                }).build()).build().execute();
 
     }
 
@@ -358,7 +419,7 @@ public class MainActivity extends Activity {
         // can use UI thread here
         protected void onPreExecute() {
             Log.d("INFO", "*****ISD2: Calling DownloadBreedingCodesTask");
-            Delete.table(BreedingCode.class, BreedingCode$Table.code.isNull());
+            //Delete.table(BreedingCode.class, BreedingCode$Table.code.isNull());
         }
 
         // automatically done on worker thread (separate from UI thread)

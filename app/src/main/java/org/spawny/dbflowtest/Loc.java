@@ -4,6 +4,7 @@ package org.spawny.dbflowtest;
 import com.raizlabs.android.dbflow.annotation.Column;
 import com.raizlabs.android.dbflow.annotation.Index;
 import com.raizlabs.android.dbflow.annotation.IndexGroup;
+import com.raizlabs.android.dbflow.annotation.PrimaryKey;
 import com.raizlabs.android.dbflow.annotation.Table;
 import com.raizlabs.android.dbflow.annotation.Unique;
 
@@ -11,18 +12,14 @@ import com.raizlabs.android.dbflow.annotation.Unique;
  * Created by iaindownie on 23/06/2016.
  */
 
-@Table(database = MyDatabase.class,
-        indexGroups = {
-                @IndexGroup(number = 1, unique = true, name = "LocLocIdIndex")
-        })
+@Table(database = MyDatabase.class, name = "Loc")
 public class Loc extends ArchivableModel {
 
-    @Index(indexGroups = 1)
     @Column
-    String locId;
+    public String locId;
 
     @Column
-    String userId;
+    public String userId;
 
     public Loc() {
     }
